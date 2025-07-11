@@ -101,8 +101,13 @@ struct proc {
   uint64 sz;                   // Size of process memory (bytes)
   pagetable_t pagetable;       // User page table
   struct trapframe *trapframe; // data page for trampoline.S
+  struct trapframe alarmframe;
   struct context context;      // swtch() here to run process
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
+  int AlarmInteval;            // 闹钟时间间隔
+  int  Counter;                // 计时器，记录从上次触发handler到现在经过的ticks数量
+  char InHandler;              // 标志位，表示当前进程是否处于响应alarm的流程中
+  uint64 Handler;  
   char name[16];               // Process name (debugging)
 };

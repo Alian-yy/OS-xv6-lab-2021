@@ -52,6 +52,7 @@ sys_sbrk(void)
   return addr;
 }
 
+void backtrace(void);
 uint64
 sys_sleep(void)
 {
@@ -70,6 +71,7 @@ sys_sleep(void)
     sleep(&ticks, &tickslock);
   }
   release(&tickslock);
+  backtrace();
   return 0;
 }
 
@@ -94,4 +96,26 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+//将用户传进来的参数记录进进程结构体中
+uint64 
+sys_sigalarm(void)
+{
+  if(argint(0, &myproc()->AlarmInteval) < 0)
+    return -1;
+  if(argaddr(1, &myproc()->Handler) < 0)
+    return -1;
+  return 0;
+}
+
+// 恢复现场并将计数器和标志重置
+uint64
+sys_sigreturn(void)
+{
+  struct proc* p = myproc();
+  memmove(p->trapframe, &p->alarmframe, sizeof(struct trapframe));  
+  p->Counter = 0;                                                   
+  p->InHandler = 0;                                                   
+  return 0;
 }
