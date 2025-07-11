@@ -432,3 +432,35 @@ copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
     return -1;
   }
 }
+
+// 此函数借鉴了walkaddr的写法，用来递归地打印页表
+void
+raw_vmprint(pagetable_t pagetable, int Layer)
+{
+
+  for(int i = 0 ; i < 512 ; ++i){
+    pte_t pte = pagetable[i];
+     
+    if((pte & PTE_V) && (pte & (PTE_R|PTE_W|PTE_X)) == 0){
+      uint64 phaddr = (pte >> 10) << 12;
+      for( ; Layer != 0 ; --Layer)
+        printf(".. ");
+      
+      // 打印本级页表信息，向孩子页表递归
+      printf("..%d: pte %p pa %p\n", i, pte, phaddr);
+      uint64 child = PTE2PA(pte);
+      raw_vmprint((pagetable_t)child, Layer + 1);
+    }
+    // 如果当前PTE指向的是叶级页表
+    // 取出物理地址并打印信息，随后返回
+    else if (pte & PTE_V){
+      uint64 phaddr = (pte >> 10) << 12;
+      printf(".. .. ..%d: pte %p pa %p\n", i, pte, phaddr);
+    }
+  }
+}
+
+void vmprint(pagetable_t pagetable)
+{//封装一层
+  raw_vmprint(pagetable, 0);
+}
